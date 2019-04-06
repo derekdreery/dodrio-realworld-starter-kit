@@ -19,5 +19,11 @@ For more information on how to this works with other frontends/backends, head ov
 
 # Getting started
 
-> npm install, npm start, etc.
+```sh
+> cargo install -f wasm-pack # only needed once
+> wasm-pack build --target no-modules
+> cargo install -f basic-http-server # only needed once
+> basic-http-server # or any static web server
+> # navigate to localhost:4000 e.g. xdg-open http://localhost:4000
+```
 

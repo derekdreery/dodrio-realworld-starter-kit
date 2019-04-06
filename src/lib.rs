@@ -2,7 +2,7 @@
 
 mod home;
 mod layout;
-mod login;
+mod profile;
 mod router;
 mod util;
 
@@ -11,14 +11,20 @@ use futures::Future;
 use router::Route;
 use wasm_bindgen::{prelude::*, JsCast};
 
+use crate::profile::LoginPage;
+
 #[derive(Debug)]
 struct State {
     route: Route,
+    login_page: LoginPage,
 }
 
 impl Default for State {
     fn default() -> Self {
-        State { route: Route::Home }
+        State {
+            route: Route::Home,
+            login_page: LoginPage::default(),
+        }
     }
 }
 
@@ -39,11 +45,21 @@ impl Render for State {
     where
         'a: 'bump,
     {
+        use dodrio::builder::div;
+
         let page = match self.route {
             Route::Home => home::page(bump),
-            Route::Login => login::page(bump),
+            Route::Login => self.login_page.render(bump),
+            /*
+            Route::Register => profile::register_page(bump),
+            Route::Editor { slug } => article::editor_page(slug, bump),
+            Route::Article { id } => article::page(id, bump),
+            Route::Settings => profile::settings_page(bump),
+            Route::ProfileFavorites { username } => profile::favorites_page(bump),
+            Route::Profile { username } => profile::profile_page(bump),
+            */
+            _ => unimplemented!(),
         };
-        use dodrio::builder::div;
         div(bump)
             .children([layout::header(bump), page, layout::footer(bump)])
             .finish()
@@ -75,11 +91,11 @@ fn update(msg: Msg, root: &mut dyn dodrio::RootRender, vdom: dodrio::VdomWeak) {
         &"color: black; font-weight: bold;".into(),
         &"font-weight: normal;".into(),
     );
-    log::info!("Old state: {:?}", root_state);
-    log::info!("Msg: {:?}", msg);
+    log::debug!("Old state: {:?}", root_state);
+    log::debug!("Msg: {:?}", msg);
     let change = root_state.update(msg);
-    log::info!("state changed: {}", change);
-    log::info!("New state: {:?}", root_state);
+    log::debug!("state changed: {}", change);
+    log::debug!("New state: {:?}", root_state);
     web_sys::console::group_end();
     if change {
         vdom.schedule_render();
@@ -91,8 +107,8 @@ pub fn start() {
     console_error_panic_hook::set_once();
     console_log::init_with_level(log::Level::Debug).unwrap_throw();
 
-    let window = web_sys::window().unwrap_throw();
-    let document = window.document().unwrap_throw();
+    let window = util::window();
+    let document = util::document();
     let body = document.body().unwrap_throw();
 
     let app = State::default();

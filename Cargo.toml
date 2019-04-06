@@ -2,7 +2,11 @@
 name = "dodrio-realworld-starter-kit"
 version = "0.1.0"
 authors = ["Richard Dodd <richard.o.dodd@gmail.com>"]
+description = "Realworld implemented in dodrio"
+repository = "https://github.com/derekdreery/dodrio-realworld-starter-kit"
+license = "Apache-2.0/MIT"
 edition = "2018"
+readme = "README.md"
 
 [lib]
 crate-type = ["cdylib"]
@@ -16,6 +20,7 @@ futures = "0.1.25"
 log = "0.4.6"
 console_log = "0.1.2"
 chrono = "0.4.6"
+wasm-history = { version = "*", path = "./wasm-history" }
 
 [dependencies.web-sys]
 version = "0.3.16"
@@ -35,3 +40,9 @@ features = [
 
 [dev-dependencies]
 wasm-bindgen-test = "0.2.39"
+
+[workspace]
+members = [
+    ".",
+    "wasm-history"
+]
