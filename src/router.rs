@@ -12,7 +12,7 @@ pub struct Router<R> {
 
 impl<R> Router<R>
 where
-    R: FromStr + ToString,
+    R: FromStr + Display,
 {
     pub fn new<F>(f: F) -> Self
     where

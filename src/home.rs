@@ -141,7 +141,7 @@ where
     for tag in tags {
         tag_list.push(
             a(bump)
-                .attr("href", "#")
+                .attr("href", "/")
                 .attr("class", "tag-pill tag-default")
                 .children([text(tag.as_ref())])
                 .finish(),
@@ -184,7 +184,7 @@ fn feed_toggle<'bump>(bump: &'bump Bump) -> Node<'bump> {
                     .attr("class", "nav-item")
                     .children([a(bump)
                         .attr("class", "nav-link disabled")
-                        .attr("href", "#")
+                        .attr("href", "/")
                         .children([text("Your Feed")])
                         .finish()])
                     .finish(),
@@ -192,7 +192,7 @@ fn feed_toggle<'bump>(bump: &'bump Bump) -> Node<'bump> {
                     .attr("class", "nav-item")
                     .children([a(bump)
                         .attr("class", "nav-link active")
-                        .attr("href", "#")
+                        .attr("href", "/")
                         .children([text("Global Feed")])
                         .finish()])
                     .finish(),
@@ -224,7 +224,7 @@ impl<'a> ArticlePreview<'a> {
                     .attr("class", "article-meta")
                     .children([
                         a(bump)
-                            .attr("href", "#profile.html")
+                            .attr("href", "/")
                             .children([img(bump)
                                 .attr("src", "http://i.imgur.com/Qr71crq.jpg")
                                 .finish()])
@@ -233,7 +233,7 @@ impl<'a> ArticlePreview<'a> {
                             .attr("class", "info")
                             .children([
                                 a(bump)
-                                    .attr("href", "#")
+                                    .attr("href", "/")
                                     .attr("class", "author")
                                     .children([text(self.author)])
                                     .finish(),

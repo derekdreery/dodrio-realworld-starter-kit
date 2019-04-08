@@ -1,6 +1,9 @@
+use js_sys::Error;
 use std::fmt;
-use url::Url;
-use wasm_bindgen::prelude::*;
+use wasm_bindgen::{prelude::*, JsCast};
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub struct SecurityError;
 
 /// Go back 1 page
 pub fn back() {
@@ -26,11 +29,22 @@ pub fn go(delta: i32) {
 /// Push a new url onto the history stack.
 ///
 /// This won't change the page, but will fire a `popstate` event.
-pub fn push(url: &str) -> Result<(), PushUrlError> {
-    check_url(url)?;
+///
+/// # Throws
+///
+/// SecurityError - incorrect origin
+///
+pub fn push(url: &str) -> Result<(), SecurityError> {
     history()
         .push_state_with_url(&JsValue::NULL, "", Some(url))
-        .unwrap();
+        .map_err(|e| {
+            let e = e.dyn_into::<js_sys::Error>().unwrap_throw();
+            if e.name() == "SecurityError" {
+                SecurityError
+            } else {
+                wasm_bindgen::throw_val(e.into());
+            }
+        })?;
     dispatch_popstate();
     Ok(())
 }
@@ -38,62 +52,20 @@ pub fn push(url: &str) -> Result<(), PushUrlError> {
 /// Replace the current url with a new one.
 ///
 /// This won't change the page, but will fire a `popstate` event.
-pub fn replace(url: &str) -> Result<(), PushUrlError> {
-    check_url(url)?;
+pub fn replace(url: &str) -> Result<(), SecurityError> {
     history()
         .replace_state_with_url(&JsValue::NULL, "", Some(url))
-        .unwrap();
+        .map_err(|e| {
+            let e = e.dyn_into::<js_sys::Error>().unwrap_throw();
+            if e.name() == "SecurityError" {
+                SecurityError
+            } else {
+                wasm_bindgen::throw_val(e.into());
+            }
+        })?;
     dispatch_popstate();
     Ok(())
 }
-
-fn check_url(url: &str) -> Result<(), PushUrlError> {
-    // Get the current url from web_sys
-    let current = window().location().href().unwrap_throw();
-    let current = match Url::parse(&current) {
-        Ok(o) => o,
-        Err(e) => wasm_bindgen::throw_str(&format!("cannot parse current origin: {}", e)),
-    };
-    // check `url` is actually a url, and matches the current one.
-    match Url::parse(url) {
-        Ok(u) => {
-            if u.origin() == current.origin() {
-                Ok(())
-            } else {
-                Err(PushUrlError::IncorrectOrigin { current, pushed: u })
-            }
-        }
-        // if there is no base then allow
-        Err(url::ParseError::RelativeUrlWithoutBase) => Ok(()),
-        // unexpected error
-        Err(e) => Err(PushUrlError::InvalidUrl(url.to_owned(), e)),
-    }
-}
-
-// errors
-
-/// The origin of a pushed url didn't match the current origin.
-#[derive(Debug)]
-pub enum PushUrlError {
-    IncorrectOrigin { pushed: Url, current: Url },
-    InvalidUrl(String, url::ParseError),
-}
-
-impl fmt::Display for PushUrlError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use PushUrlError::*;
-        match self {
-            IncorrectOrigin { pushed, current } => write!(
-                f,
-                r#"the pushed url has origin "{}", but the current page has origin "{}""#,
-                pushed, current,
-            ),
-            InvalidUrl(url, err) => write!(f, r#"could not parse url "{}": {}"#, url, err),
-        }
-    }
-}
-
-impl std::error::Error for PushUrlError {}
 
 // utility
 
