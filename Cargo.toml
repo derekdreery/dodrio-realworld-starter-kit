@@ -21,6 +21,7 @@ log = "0.4.6"
 console_log = "0.1.2"
 chrono = "0.4.6"
 wasm-history = { version = "*", path = "./wasm-history" }
+gloo = { path = "../gloo" }
 
 [dependencies.web-sys]
 version = "0.3.16"

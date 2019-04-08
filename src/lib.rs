@@ -117,10 +117,9 @@ pub fn start() {
 
     // routing
     let vdom2 = vdom.weak();
-    let on_hash_change = move || {
-        let hash = util::hash();
-        log::debug!("route change event: raw = {:?}", hash);
-        if let Some(route) = hash.and_then(|val| val.parse().ok()) {
+    let on_route = move |route| {
+        log::debug!("route change event: {:?}", route);
+        if let Ok(route) = route {
             wasm_bindgen_futures::spawn_local(
                 vdom2
                     .with_component({
@@ -131,17 +130,12 @@ pub fn start() {
             )
         } else {
             log::warn!("Unrecognised route -> redirecting to home");
-            util::set_hash(&Route::Home.to_string());
+            wasm_history::push("").unwrap();
         }
     };
-    on_hash_change();
-    let on_hash_change = Closure::wrap(Box::new(on_hash_change) as Box<dyn FnMut()>);
-
-    window
-        .add_event_listener_with_callback("hashchange", on_hash_change.as_ref().unchecked_ref())
-        .unwrap_throw();
+    let router = router::Router::new(on_route);
 
     // run forever
     vdom.forget();
-    on_hash_change.forget();
+    router.forget();
 }

@@ -30,7 +30,8 @@ pub fn push(url: &str) -> Result<(), PushUrlError> {
     check_url(url)?;
     history()
         .push_state_with_url(&JsValue::NULL, "", Some(url))
-        .unwrap_throw();
+        .unwrap();
+    dispatch_popstate();
     Ok(())
 }
 
@@ -41,7 +42,8 @@ pub fn replace(url: &str) -> Result<(), PushUrlError> {
     check_url(url)?;
     history()
         .replace_state_with_url(&JsValue::NULL, "", Some(url))
-        .unwrap_throw();
+        .unwrap();
+    dispatch_popstate();
     Ok(())
 }
 
@@ -101,4 +103,9 @@ fn history() -> web_sys::History {
 
 fn window() -> web_sys::Window {
     web_sys::window().unwrap_throw()
+}
+
+fn dispatch_popstate() {
+    let evt = web_sys::Event::new("popstate").unwrap_throw();
+    window().dispatch_event(&evt).unwrap_throw();
 }

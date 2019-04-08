@@ -1,4 +1,53 @@
+use futures::{stream::Stream, sync::mpsc, Async, Poll};
+use gloo::events::EventListener;
+use std::marker::PhantomData;
 use std::{fmt, str::FromStr};
+use wasm_bindgen::UnwrapThrowExt;
+
+/// Responsible for watching for new routes and rendering the corresponding page.
+pub struct Router<R> {
+    listener: EventListener,
+    routes: PhantomData<R>,
+}
+
+impl<R> Router<R>
+where
+    R: FromStr + ToString,
+{
+    pub fn new<F>(f: F) -> Self
+    where
+        F: Fn(Result<R, NotFound>) + 'static,
+    {
+        let window = web_sys::window().unwrap_throw();
+        f(get_url().parse::<R>().map_err(|_| NotFound));
+        let listener = EventListener::new(window.as_ref(), "popstate", move |_evt| {
+            f(get_url().parse::<R>().map_err(|_| NotFound))
+        });
+        Router {
+            listener,
+            routes: PhantomData,
+        }
+    }
+
+    pub fn forget(mut self) {
+        self.listener.forget()
+    }
+
+    pub fn push(route: R) {
+        wasm_history::push(&route.to_string()).unwrap_throw();
+    }
+}
+
+fn get_url() -> String {
+    web_sys::window()
+        .unwrap_throw()
+        .location()
+        .href()
+        .unwrap_throw()
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub struct NotFound;
 
 /// Our route. Can be converted from and to a hash location.
 #[derive(Debug, Eq, PartialEq, Clone)]
@@ -28,11 +77,7 @@ impl FromStr for Route {
     type Err = UnrecognisedRoute;
 
     fn from_str(raw: &str) -> Result<Self, Self::Err> {
-        // should start with '#'
-        if !(raw.chars().next() == Some('#')) {
-            return Err(UnrecognisedRoute);
-        }
-        let mut raw = raw.split('/').filter(|&part| part != "").skip(1);
+        let mut raw = raw.split('/').filter(|&part| part != "");
         match raw.next() {
             None => Ok(Route::Home),
             Some("login") => end(Route::Login, raw),
@@ -69,7 +114,6 @@ impl FromStr for Route {
 
 impl fmt::Display for Route {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str("#/")?;
         match self {
             Route::Home => Ok(()),
             Route::Login => f.write_str("login"),
