@@ -1,8 +1,8 @@
-use crate::State;
+use crate::{util::bump_str, State};
 use chrono::prelude::*;
 use dodrio::{
     bumpalo::{self, Bump},
-    ListenerCallback, Node, Render,
+    Node, Render, RenderContext,
 };
 use wasm_bindgen::{prelude::*, JsCast};
 
@@ -152,38 +152,35 @@ impl Default for LoginPage {
 }
 
 impl Render for LoginPage {
-    fn render<'a, 'bump>(&'a self, bump: &'bump Bump) -> Node<'bump>
-    where
-        'a: 'bump,
-    {
+    fn render<'a>(&self, ctx: &mut RenderContext<'a>) -> Node<'a> {
         use dodrio::{builder::*, bumpalo::collections::Vec};
 
-        let mut main_children = Vec::with_capacity_in(4, bump);
+        let mut main_children = Vec::with_capacity_in(4, ctx.bump);
         main_children.push(
-            h1(bump)
+            h1(&ctx)
                 .attr("class", "text-xs-center")
                 .children([text("Sign up")])
                 .finish(),
         );
         main_children.push(
-            p(bump)
+            p(&ctx)
                 .attr("class", "text-xs-center")
-                .children([a(bump)
+                .children([a(&ctx)
                     .attr("href", "#/")
                     .children([text("Have an account?")])
                     .finish()])
                 .finish(),
         );
         if let Some(msg) = Some("An error occurred") {
-            main_children.push(error_msgs(&[msg], bump));
+            main_children.push(error_msgs(&[msg], &ctx));
         }
         main_children.push(
-            form(bump)
+            form(&ctx)
                 .children([
                     form_ctrl(
                         "text",
                         "Your Name",
-                        &self.name(),
+                        bump_str(self.name(), ctx.bump),
                         |root, vdom, event| {
                             let new_value = event
                                 .target()
@@ -195,12 +192,12 @@ impl Render for LoginPage {
                             vdom.schedule_render();
                             event.prevent_default();
                         },
-                        bump,
+                        &ctx,
                     ),
                     form_ctrl(
                         "text",
                         "Email",
-                        &self.email(),
+                        bump_str(self.email(), ctx.bump),
                         |root, vdom, event| {
                             let new_value = event
                                 .target()
@@ -212,12 +209,12 @@ impl Render for LoginPage {
                             vdom.schedule_render();
                             event.prevent_default();
                         },
-                        bump,
+                        &ctx,
                     ),
                     form_ctrl(
                         "password",
                         "Password",
-                        &self.password(),
+                        bump_str(self.password(), ctx.bump),
                         |root, vdom, event| {
                             let new_value = event
                                 .target()
@@ -229,9 +226,9 @@ impl Render for LoginPage {
                             vdom.schedule_render();
                             event.prevent_default();
                         },
-                        bump,
+                        &ctx,
                     ),
-                    button(bump)
+                    button(&ctx)
                         .attr("class", "btn btn-lg btn-primary pull-xs-right")
                         .children([text("Sign up")])
                         .finish(),
@@ -239,13 +236,13 @@ impl Render for LoginPage {
                 .finish(),
         );
 
-        div(bump)
+        div(&ctx)
             .attr("class", "auth-page")
-            .children([div(bump)
+            .children([div(&ctx)
                 .attr("class", "container page")
-                .children([div(bump)
+                .children([div(&ctx)
                     .attr("class", "row")
-                    .children([div(bump)
+                    .children([div(&ctx)
                         .attr("class", "col-md-6 offset-md-3 col-xs-12")
                         .children(main_children)
                         .finish()])
@@ -258,16 +255,14 @@ impl Render for LoginPage {
 // helper render methods
 // ---------------------
 
-fn form_ctrl<'a, 'bump>(
+fn form_ctrl<'a>(
     r#type: &'a str,
     placeholder: &'a str,
     value: &'a str,
     on_change: impl 'static + Fn(&mut dyn dodrio::RootRender, dodrio::VdomWeak, web_sys::Event),
-    bump: &'bump Bump,
-) -> Node<'bump>
-where
-    'a: 'bump,
-{
+    bump: impl Into<&'a Bump>,
+) -> Node<'a> {
+    let bump = bump.into();
     use dodrio::builder::*;
     fieldset(bump)
         .attr("class", "form-group")
@@ -281,13 +276,10 @@ where
         .finish()
 }
 
-fn error_msgs<'a, 'bump>(msgs: &'_ [&'a str], bump: &'bump Bump) -> Node<'bump>
-where
-    'a: 'bump,
-{
+fn error_msgs<'a>(msgs: &[&'a str], bump: impl Into<&'a Bump>) -> Node<'a> {
     use dodrio::builder::*;
     use dodrio::bumpalo::collections::Vec;
-
+    let bump = bump.into();
     let mut msgs_bump = Vec::with_capacity_in(msgs.len(), bump);
     for msg in msgs {
         msgs_bump.push(li(bump).children([text(msg)]).finish());

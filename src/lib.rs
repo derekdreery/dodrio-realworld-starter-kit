@@ -6,7 +6,7 @@ mod profile;
 mod router;
 mod util;
 
-use dodrio::{bumpalo::Bump, Node, Render};
+use dodrio::{Node, Render, RenderContext};
 use futures::Future;
 use router::Route;
 use wasm_bindgen::{prelude::*, JsCast};
@@ -41,15 +41,12 @@ impl State {
 }
 
 impl Render for State {
-    fn render<'a, 'bump>(&'a self, bump: &'bump Bump) -> Node<'bump>
-    where
-        'a: 'bump,
-    {
+    fn render<'a>(&self, ctx: &mut RenderContext<'a>) -> Node<'a> {
         use dodrio::builder::div;
 
         let page = match self.route {
-            Route::Home => home::page(bump),
-            Route::Login => self.login_page.render(bump),
+            Route::Home => home::page(ctx),
+            Route::Login => self.login_page.render(ctx),
             /*
             Route::Register => profile::register_page(bump),
             Route::Editor { slug } => article::editor_page(slug, bump),
@@ -60,8 +57,8 @@ impl Render for State {
             */
             _ => unimplemented!(),
         };
-        div(bump)
-            .children([layout::header(bump), page, layout::footer(bump)])
+        div(&ctx)
+            .children([layout::header(ctx), page, layout::footer(ctx)])
             .finish()
     }
 }

@@ -1,7 +1,10 @@
 use futures::{stream::Stream, sync::mpsc, Async, Poll};
 use gloo::events::EventListener;
 use std::marker::PhantomData;
-use std::{fmt, str::FromStr};
+use std::{
+    fmt::{self, Display},
+    str::FromStr,
+};
 use wasm_bindgen::UnwrapThrowExt;
 
 /// Responsible for watching for new routes and rendering the corresponding page.

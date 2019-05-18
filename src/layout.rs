@@ -1,4 +1,4 @@
-use dodrio::{bumpalo::Bump, Node};
+use dodrio::{Node, RenderContext};
 
 /// <nav class="navbar navbar-light">
 ///   <div class="container">
@@ -24,46 +24,46 @@ use dodrio::{bumpalo::Bump, Node};
 ///     </ul>
 ///   </div>
 /// </nav>
-pub fn header<'bump>(bump: &'bump Bump) -> Node<'bump> {
+pub fn header<'a>(ctx: &mut RenderContext<'a>) -> Node<'a> {
     use dodrio::builder::*;
-    nav(bump)
+    nav(&ctx)
         .attr("class", "navbar navbar-light")
-        .children([div(bump)
+        .children([div(&ctx)
             .attr("class", "container")
             .children([
-                a(bump)
+                a(&ctx)
                     .attr("class", "navbar-brand")
                     .attr("href", "#/")
                     .children([text("conduit")])
                     .finish(),
-                ul(bump)
+                ul(&ctx)
                     .attr("class", "nav navbar-nav pull-xs-right")
                     .children([
-                        li(bump)
+                        li(&ctx)
                             .attr("class", "nav-item")
-                            .children([a(bump)
+                            .children([a(&ctx)
                                 .attr("class", "nav-link")
                                 .attr("href", "")
                                 .children([
-                                    i(bump).attr("class", "ion-compose").finish(),
+                                    i(&ctx).attr("class", "ion-compose").finish(),
                                     text("\u{00a0}New Post"), // non-breaking space
                                 ])
                                 .finish()])
                             .finish(),
-                        li(bump)
+                        li(&ctx)
                             .attr("class", "nav-item")
-                            .children([a(bump)
+                            .children([a(&ctx)
                                 .attr("class", "nav-link")
                                 .attr("href", "")
                                 .children([
-                                    i(bump).attr("class", "ion-gear-a").finish(),
+                                    i(&ctx).attr("class", "ion-gear-a").finish(),
                                     text("\u{00a0}Settings"),
                                 ])
                                 .finish()])
                             .finish(),
-                        li(bump)
+                        li(&ctx)
                             .attr("class", "nav-item")
-                            .children([a(bump)
+                            .children([a(&ctx)
                                 .attr("class", "nav-link")
                                 .attr("href", "#/login")
                                 .children([text("Sign up")])
@@ -84,22 +84,22 @@ pub fn header<'bump>(bump: &'bump Bump) -> Node<'bump> {
 ///     </span>
 ///   </div>
 /// </footer>
-pub fn footer<'bump>(bump: &'bump Bump) -> Node<'bump> {
+pub fn footer<'a>(ctx: &mut RenderContext<'a>) -> Node<'a> {
     use dodrio::builder::*;
-    footer(bump)
-        .children([div(bump)
+    footer(&ctx)
+        .children([div(&ctx)
             .attr("class", "container")
             .children([
-                a(bump)
+                a(&ctx)
                     .attr("href", "/")
                     .attr("class", "logo-font")
                     .children([text("conduit")])
                     .finish(),
-                span(bump)
+                span(&ctx)
                     .attr("class", "attribution")
                     .children([
                         text("An interactive learning project from "),
-                        a(bump)
+                        a(&ctx)
                             .attr("href", "https://thinkster.io")
                             .children([text("thinkster")])
                             .finish(),

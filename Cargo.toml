@@ -12,7 +12,7 @@ readme = "README.md"
 crate-type = ["cdylib"]
 
 [dependencies]
-dodrio = "0.1.0"
+dodrio = { version = "0.1.0", path = "../dodrio" }
 wasm-bindgen = "0.2.40"
 console_error_panic_hook = "0.1.6"
 wasm-bindgen-futures = "0.3.17"

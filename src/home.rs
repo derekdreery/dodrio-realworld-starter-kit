@@ -1,7 +1,8 @@
+use crate::util::bump_str;
 use chrono::prelude::*;
 use dodrio::{
     bumpalo::{self, Bump},
-    Node,
+    Node, RenderContext,
 };
 use wasm_bindgen::prelude::*;
 
@@ -78,12 +79,12 @@ use wasm_bindgen::prelude::*;
 ///   </div>
 /// </div>
 /// </div>
-pub fn page<'bump>(bump: &'bump Bump) -> Node<'bump> {
+pub fn page<'a>(ctx: &mut RenderContext<'a>) -> Node<'a> {
     use dodrio::builder::*;
 
     // todo the number of stories + 1
     let mut wide_col = Vec::with_capacity(3);
-    wide_col.push(feed_toggle(bump));
+    wide_col.push(feed_toggle(ctx));
     wide_col.push(
         ArticlePreview {
             title: "How to build webapps that scale",
@@ -92,22 +93,22 @@ pub fn page<'bump>(bump: &'bump Bump) -> Node<'bump> {
             description: "This is the description for the post.",
             likes: 29,
         }
-        .render(bump),
+        .render(ctx),
     );
-    div(bump)
+    div(&ctx)
         .attr("class", "home-page")
         .children([
-            banner(bump),
-            div(bump)
+            banner(ctx),
+            div(&ctx)
                 .attr("class", "container page")
-                .children([div(bump)
+                .children([div(&ctx)
                     .attr("class", "row")
                     .children([
-                        div(bump)
+                        div(&ctx)
                             .attr("class", "col-md-9")
                             .children(wide_col)
                             .finish(),
-                        div(bump)
+                        div(&ctx)
                             .attr("class", "col-md-3")
                             .children([sidebar(
                                 &[
@@ -120,7 +121,7 @@ pub fn page<'bump>(bump: &'bump Bump) -> Node<'bump> {
                                     "node",
                                     "rails",
                                 ],
-                                bump,
+                                ctx,
                             )])
                             .finish(),
                     ])
@@ -131,41 +132,39 @@ pub fn page<'bump>(bump: &'bump Bump) -> Node<'bump> {
 }
 
 /// Draw the right-hand sidebar.
-fn sidebar<'a, 'bump>(tags: &'a [impl AsRef<str> + 'a], bump: &'bump Bump) -> Node<'bump>
-where
-    'a: 'bump,
-{
-    use dodrio::builder::*;
-    let mut tag_list = Vec::with_capacity(tags.len() + 1);
-    tag_list.push(p(bump).children([text("Popular Tags")]).finish());
+fn sidebar<'a>(tags: &[impl AsRef<str>], ctx: &mut RenderContext<'a>) -> Node<'a> {
+    use dodrio::{builder::*, bumpalo::collections::Vec};
+    let mut tag_list = Vec::with_capacity_in(tags.len() + 1, ctx.bump);
+    tag_list.push(p(&ctx).children([text("Popular Tags")]).finish());
     for tag in tags {
+        let tag = bumpalo::format!(in ctx.bump, "{}", tag.as_ref()).into_bump_str();
         tag_list.push(
-            a(bump)
+            a(&ctx)
                 .attr("href", "/")
                 .attr("class", "tag-pill tag-default")
-                .children([text(tag.as_ref())])
+                .children([text(tag)])
                 .finish(),
         );
     }
-    div(bump)
+    div(&ctx)
         .attr("class", "sidebar")
         .children(tag_list)
         .finish()
 }
 
 /// The top banner
-fn banner<'bump>(bump: &'bump Bump) -> Node<'bump> {
+fn banner<'a>(ctx: &mut RenderContext<'a>) -> Node<'a> {
     use dodrio::builder::*;
-    div(bump)
+    div(&ctx)
         .attr("class", "banner")
-        .children([div(bump)
+        .children([div(&ctx)
             .attr("class", "container")
             .children([
-                h1(bump)
+                h1(&ctx)
                     .attr("class", "logo-font")
                     .children([text("conduit")])
                     .finish(),
-                p(bump)
+                p(&ctx)
                     .children([text("A place to share your knowledge.")])
                     .finish(),
             ])
@@ -173,24 +172,24 @@ fn banner<'bump>(bump: &'bump Bump) -> Node<'bump> {
         .finish()
 }
 
-fn feed_toggle<'bump>(bump: &'bump Bump) -> Node<'bump> {
+fn feed_toggle<'a>(ctx: &mut RenderContext<'a>) -> Node<'a> {
     use dodrio::builder::*;
-    div(bump)
+    div(&ctx)
         .attr("class", "feed-toggle")
-        .children([ul(bump)
+        .children([ul(&ctx)
             .attr("class", "nav nav-pills outline-active")
             .children([
-                li(bump)
+                li(&ctx)
                     .attr("class", "nav-item")
-                    .children([a(bump)
+                    .children([a(&ctx)
                         .attr("class", "nav-link disabled")
                         .attr("href", "/")
                         .children([text("Your Feed")])
                         .finish()])
                     .finish(),
-                li(bump)
+                li(&ctx)
                     .attr("class", "nav-item")
-                    .children([a(bump)
+                    .children([a(&ctx)
                         .attr("class", "nav-link active")
                         .attr("href", "/")
                         .children([text("Global Feed")])
@@ -212,58 +211,64 @@ struct ArticlePreview<'a> {
 }
 
 impl<'a> ArticlePreview<'a> {
-    fn render<'bump>(&'_ self, bump: &'bump Bump) -> Node<'bump>
-    where
-        'a: 'bump,
-    {
+    fn render<'b>(&self, ctx: &mut RenderContext<'b>) -> Node<'b> {
         use dodrio::builder::*;
-        div(bump)
+        div(&ctx)
             .attr("class", "article-preview")
             .children([
-                div(bump)
+                div(&ctx)
                     .attr("class", "article-meta")
                     .children([
-                        a(bump)
+                        a(&ctx)
                             .attr("href", "/")
-                            .children([img(bump)
+                            .children([img(&ctx)
                                 .attr("src", "http://i.imgur.com/Qr71crq.jpg")
                                 .finish()])
                             .finish(),
-                        div(bump)
+                        div(&ctx)
                             .attr("class", "info")
                             .children([
-                                a(bump)
+                                a(&ctx)
                                     .attr("href", "/")
                                     .attr("class", "author")
-                                    .children([text(self.author)])
+                                    .children([text(bump_str(self.author, ctx.bump))])
                                     .finish(),
-                                span(bump)
+                                span(&ctx)
                                     .attr("class", "date")
-                                    .children([text(
-                                        bumpalo::format!(in bump, "{}{}",
-                                                         self.date.format("%B %-d"),
-                                                         date_suffix(&self.date))
-                                        .into_bump_str(),
-                                    )])
+                                    .children([text(bump_str(
+                                        format_args!(
+                                            "{}{}",
+                                            self.date.format("%B %-d"),
+                                            date_suffix(&self.date)
+                                        ),
+                                        ctx.bump,
+                                    ))])
                                     .finish(),
                             ])
                             .finish(),
-                        button(bump)
+                        button(&ctx)
                             .attr("class", "btn btn-outline-primary btn-sm pull-xs-right")
                             .children([
-                                i(bump).attr("class", "ion-heart").finish(),
-                                text(bumpalo::format!(in bump, " {}", self.likes).into_bump_str()),
+                                i(&ctx).attr("class", "ion-heart").finish(),
+                                text(
+                                    &bumpalo::format!(in ctx.bump, " {}", self.likes)
+                                        .into_bump_str(),
+                                ),
                             ])
                             .finish(),
                     ])
                     .finish(),
-                a(bump)
+                a(&ctx)
                     .attr("href", "#")
                     .attr("class", "preview-link")
                     .children([
-                        h1(bump).children([text(self.title)]).finish(),
-                        p(bump).children([text(self.description)]).finish(),
-                        span(bump).children([text("Read more...")]).finish(),
+                        h1(&ctx)
+                            .children([text(bump_str(self.title, ctx.bump))])
+                            .finish(),
+                        p(&ctx)
+                            .children([text(bump_str(self.description, ctx.bump))])
+                            .finish(),
+                        span(&ctx).children([text("Read more...")]).finish(),
                     ])
                     .finish(),
             ])
